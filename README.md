@@ -2,7 +2,12 @@
 
 This repository serves as a unified location for managing and deploying multiple components, organized into three key subdirectories. Each subdirectory focuses on a specific aspect of deployment and application management.
 
-## Subdirectories
+# Online Emulator
+This project is a containerized application that provides a browser-based emulator experience. This project was inspired by the [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) project. the core engine that runs the emulator is from that project, so make sure
+to check them out.
+The project is designed to be easily deployed on a Kubernetes cluster, in a aws enviorment.
+
+## Table of Contents
 
 ### 1. Online Emulator
 - **Purpose**: Provides a browser-based emulator experience.
@@ -37,12 +42,10 @@ This repository serves as a unified location for managing and deploying multiple
   - `apps/`: Contains individual application configurations.
   - `apps/infra-apps/`: Manages infrastructure-specific configurations like: 
   ``` Fluentd, Prometheus, Elasticsearch, NGINX ingress, cert-manager. ```
-
-
-
+##
 ![Architecture](./images/architecture.png)
 ![Monitoring](./images/monitor.png)
-
+##
 
 
 ## Purpose of This Repository
