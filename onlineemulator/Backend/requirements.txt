@@ -1,0 +1,8 @@
+flask
+flask-cors
+psycopg2-binary
+pymongo
+boto3
+prometheus-client
+
+

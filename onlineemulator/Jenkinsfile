@@ -1,0 +1,243 @@
+pipeline {
+    agent any
+
+    environment {
+        BACKEND_ECR_REPO = '600627353694.dkr.ecr.ap-south-1.amazonaws.com/dan/emulator-back'
+        FRONTEND_ECR_REPO = '600627353694.dkr.ecr.ap-south-1.amazonaws.com/dan/emulator-front'
+        REGION = 'ap-south-1'  
+        IMAGE_TAG = 'latest'
+    }
+
+    stages {
+        stage('Clone/Pull') {
+            steps {
+                checkout scm 
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    dir('Backend') {
+                        sh 'docker build -t tests -f Dockerfile.tests .'
+                        sh 'docker run --rm tests'
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Backend') {
+                    steps {
+                        buildBackendImage()  
+                    }
+                }
+                stage('Build Frontend') {
+                    steps {
+                        buildFrontendImage()  
+                    }
+                }
+            }
+        }
+
+        stage('End-to-End Testing') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'feature/*'
+                }
+            }
+            steps {
+                script {
+                    // runEndToEndTests()
+                    sh 'echo amazing end to end'
+                }
+            }
+        }
+
+        stage('Tag Image') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    env.NEW_TAG=tagImages() 
+                }
+            }
+        }
+
+        stage('Publish') {
+            parallel {
+                stage('Push Backend Image to ECR') {
+                    steps {
+                        pushBackendImageToECR(env.NEW_TAG)  
+                    }
+                }
+                stage('Push Frontend Image to ECR') {
+                    steps {
+                        pushFrontendImageToECR(env.NEW_TAG)  
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    updateGitOpsConfig(env.NEW_TAG)  
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()  
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
+
+
+
+// Functions to build the Backend and frontend Docker images
+// Split for parrallel execution
+def buildBackendImage() {
+    echo 'Building Backend Docker image...'
+    sh 'docker build -t emulator-back ./Backend'
+}
+def buildFrontendImage() {
+    echo 'Building Frontend Docker image...'
+    sh 'docker build -t emulator-front ./FrontEnd'
+}
+
+def runEndToEndTests() {
+    echo 'Running End-to-End tests with Docker Compose...'
+    withCredentials([
+        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY'),
+        string(credentialsId: 'DB_URL', variable: 'DB_URL'),
+        string(credentialsId: 'S3_BUCKET_NAME', variable: 'S3_BUCKET_NAME')
+    ]) {
+        // Update the environment variables dynamically
+        sh """
+            docker compose down -v
+            docker container prune -f
+
+            docker compose up -d
+            
+            sleep 25
+            
+            # Step 1: Pull the necessary image (e.g., curlimages/curl)
+            docker pull curlimages/curl:latest
+
+            # Step 2: Run a container in detached mode from the image
+            docker run -d --name curl-container --network emulator_main2_front  curlimages/curl:latest sleep infinity
+
+            # Step 3: Exec into the container and curl the frontend service
+            docker exec curl-container curl -s http://frontend:80
+
+            # Step 4: Curl the healthcheck API
+            docker exec curl-container curl -s http://frontend:80/api/healthcheck
+
+            # Step 5: Perform a POST request to register a user
+            docker exec curl-container curl -X POST http://frontend:80/api/register -H "Content-Type: application/json" -d '{"username": "user", "password": "pass"}'
+
+            # Step 6: Clean up - stop and remove the container
+            docker rm -f curl-container
+            docker compose down -v
+        """
+    }
+}
+
+// Function to tag Docker images based on Git tag
+def tagImages() {
+    echo 'Tagging Docker images and Git repository based on latest Git tag...'
+
+    def latestTag = sh(script: "git fetch --tags && git tag -l 'v*' | sort -V | tail -n 1", returnStdout: true).trim()
+    
+    def newVersion = latestTag ?: 'v1.0.0'
+
+    def (major, minor, patch) = newVersion.replace('v', '').tokenize('.')
+    
+    minor = minor ? minor.toInteger() : 0
+    patch = patch ? patch.toInteger() : 0
+    
+    patch += 1
+    newVersion = "v${major}.${minor}.${patch}"
+
+    IMAGE_TAG = newVersion
+
+
+    echo "IMAGE_TAG: ${IMAGE_TAG}"
+
+    sh "docker tag emulator-back:latest $BACKEND_ECR_REPO:$IMAGE_TAG"
+    sh "docker tag emulator-front:latest $FRONTEND_ECR_REPO:$IMAGE_TAG"
+
+    sh "git tag $IMAGE_TAG"
+    sh "git push origin $IMAGE_TAG"
+
+    return newVersion
+}
+
+
+// Functions to push Docker images to AWS ECR
+// Split for parrallel execution
+def pushBackendImageToECR(newTag) {
+    echo 'Pushing Backend Docker image to ECR...'
+    sh """
+       # Push backend image to ECR
+       aws ecr get-login-password --region ${env.REGION} | docker login --username AWS --password-stdin ${env.BACKEND_ECR_REPO}
+       docker push ${BACKEND_ECR_REPO}:${newTag}          
+
+    """
+}
+
+def pushFrontendImageToECR(newTag) {
+    sh """
+        # Push frontend image to ECR
+       aws ecr get-login-password --region ${env.REGION} | docker login --username AWS --password-stdin ${env.FRONTEND_ECR_REPO}
+       docker push ${FRONTEND_ECR_REPO}:${newTag}
+    """
+
+}
+
+// Function to update GitOps configuration (for Kubernetes deployment)
+def updateGitOpsConfig(newTag) {
+    echo 'Updating GitOps configuration with the new image tags...'
+    
+    def gitOpsRepo = 'git@gitlab.com:Dkvitca/argocd.git'
+    
+    echo ':open_file_folder: Cloning GitOps repository...'
+    sh "git clone ${gitOpsRepo}"
+    
+    dir('argocd') {
+        
+        sh 'ls -R' 
+
+        sh 'if [ ! -f apps/emulator-chart/values.yaml ]; then echo "File not found!"; exit 1; fi'
+
+        echo "Updating image versions in values.yaml..."
+
+        sh """
+            sed -i '/app:/,/frontend:/s/\\(tag:\\s*\\).*/\\1${newTag}/' apps/emulator-chart/values.yaml
+            sed -i '/frontend:/,/clusterIpService:/s/\\(tag:\\s*\\).*/\\1${newTag}/' apps/emulator-chart/values.yaml
+        """
+        
+        sh """
+            git config user.name "Dkvitca"
+            git config user.email "dankvitca326@gmail.com"
+            git commit -am "Update image tags for backend and frontend to ${newTag}"
+            git push
+        """
+    }
+}

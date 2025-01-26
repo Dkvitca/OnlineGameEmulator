@@ -1,0 +1,60 @@
+services:
+  mongodb:
+    container_name: mongodb
+    image: mongo:6.0.20
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: main_db
+    volumes:
+      - mongo_data:/data/db
+      - ./Backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+    networks:
+      - back
+    healthcheck:
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  app:
+    container_name: backend-service
+    build:
+      context: ./Backend       
+      dockerfile: Dockerfile   
+    expose:
+      - "5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy  # Ensure MongoDB is healthy before starting the app
+    
+    networks:
+      - back
+      - front
+    environment:
+      - DB_URL=${DB_URL}  
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./FrontEnd       # Path to the FrontEnd directory (build context)
+      dockerfile: Dockerfile    # The Dockerfile inside the FrontEnd directory
+    ports:
+      - "80:80"
+    networks:
+      - front
+    depends_on:
+      - app
+
+volumes:
+  mongo_data:
+
+networks:
+  back:
+    driver: bridge
+  front:
+    driver: bridge
+
