@@ -1,0 +1,31 @@
+architecture: replicaset
+replicaCount: 3
+name: mongodb
+auth:
+  enabled: true
+  rootUser: dan
+  rootPassword: dan
+    
+replication:
+  enabled: true
+  replSetName: rs0
+
+persistence:
+  enabled: true
+  size: 1Gi
+
+
+initdbScripts:
+  mongodb-init.js: |
+    db = db.getSiblingDB('main_db'); 
+    db.createCollection('games'); 
+    db.createCollection('users'); 
+
+    db.games.insertMany([
+      { name: 'Worms Armageddon', url: '/games/Worms_Armageddon/game.z64', s3_url: 's3://dan-terraform-s3/games/Worms_Armageddon/game.z64', core: 'n64' },
+      { name: 'EarthWorm Jim', url: '/games/Earthworm_Jim/game.z64', s3_url: 's3://dan-terraform-s3/games/EarthWorm_Jim/game.sfc', core: 'snes' },
+      { name: 'Pokemon FireRed', url: '/games/Pokemon_FireRed/game.gba', s3_url: 's3://dan-terraform-s3/games/Pokemon_FireRed/game.gba', core: 'gba' }
+    ]);
+
+
+

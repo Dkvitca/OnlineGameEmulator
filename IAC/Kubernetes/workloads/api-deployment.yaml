@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app-api
+  template:
+    metadata:
+      labels:
+        app: my-app-api
+    spec:
+      containers:
+      - name: my-app-api
+        image: registry.gitlab.com/dkvitca/onlineemulator/app
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "1"
+        env:
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: password
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: aws_secret_access_key
+        - name: S3_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: aws-credentials
+              key: aws_s3_bucket
+        - name: DB_URL
+          value: mongodb://$(USER):$(PASSWORD)@mongodb-headless:27017/main_db?authSource=admin
