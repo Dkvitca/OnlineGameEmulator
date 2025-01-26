@@ -1,0 +1,104 @@
+app:
+  name: backend
+  replicas: 1
+  port: 5000  
+  image:
+    repository: "600627353694.dkr.ecr.ap-south-1.amazonaws.com/dan/emulator-back"  
+    tag: v1.2.25
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "1"
+  envSecrets:
+    - name: USER
+      valueFrom:
+        secretName: database-credentials
+        key: USER
+    - name: PASSWORD
+      valueFrom:
+        secretName: database-credentials
+        key: PASSWORD
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretName: aws-credentials
+        key: aws_access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretName: aws-credentials
+        key: aws_secret_access_key
+    - name: S3_BUCKET_NAME
+      valueFrom:
+        secretName: aws-credentials
+        key: aws_s3_bucket
+  env:
+    name: DB_URL
+
+frontend:
+  name: frontend
+  replicas: 1
+  port: 80
+  image:
+    repository: "600627353694.dkr.ecr.ap-south-1.amazonaws.com/dan/emulator-front"
+    tag: v1.2.25
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "1"
+
+
+### clusterIpService
+clusterIpService:
+  type: ClusterIP
+
+### Ingress
+ingress:
+  host: danemulator.ddns.net
+  tls:
+    host: danemulator.ddns.net
+    secretName: emulator-tls  
+
+
+### clusterIssuerss
+clusterIssuer:
+  name: letsencrypt-prod
+  server: https://acme-v02.api.letsencrypt.org/directory
+  email: dankvitca326@gmail.com
+  privateKeySecretName: letsencrypt-prod
+
+mongodb:
+  architecture: replicaset
+  replicaCount: 1
+  name: mongodb
+  auth:
+    enabled: true
+    existingSecret: mongodb-credentials
+    usernames: ["dan"]        
+    databases: ["main_db"] 
+
+  replication:
+    enabled: true
+    replSetName: rs0
+    # persisrance
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: gp2-mongo
+  
+
+  initdbScripts:
+    mongodb-init.js: |
+      db = db.getSiblingDB('main_db'); 
+      db.createCollection('games'); 
+      db.createCollection('users'); 
+
+      db.games.insertMany([
+        { name: 'Worms Armageddon', url: '/games/Worms_Armageddon/game.z64', s3_url: 's3://dan-terraform-s3/games/Worms_Armageddon/game.z64', core: 'n64' },
+        { name: 'EarthWorm Jim', url: '/games/Earthworm_Jim/game.z64', s3_url: 's3://dan-terraform-s3/games/EarthWorm_Jim/game.sfc', core: 'snes' },
+        { name: 'Pokemon FireRed', url: '/games/Pokemon_FireRed/game.gba', s3_url: 's3://dan-terraform-s3/games/Pokemon_FireRed/game.gba', core: 'gba' }
+      ]);
