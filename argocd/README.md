@@ -1,34 +1,31 @@
-steps to initiate the project:
+# ArgoCD Configurations
 
-helm install argocd argo/argo-cd -n argocd --create-namespace
+This repository contains configurations for managing applications and infrastructure using ArgoCD. The files are structured to define and deploy resources efficiently in a Kubernetes environment.
 
-helm install cert-manager cert-manager/cert-manager -n cert-manager --create-namespace --version 1.16.2
+## Features
+- Application definitions for ArgoCD.
+- Infrastructure components for logging, monitoring, and ingress.
+- Organized structure for deploying multiple environments or services.
 
-helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx --create-namespace --version 4.12.0
+## Components
 
-sudo nano /etc/hosts -> and set a dns name for the ingress-nginx loadbalancer ip address
+### Parent Application
+- `parent-app.yaml`: The main ArgoCD application manifest to orchestrate child applications.
 
-apply ingress.yaml for the argocd
+### Applications
+- `apps/`: Contains definitions for individual applications to be managed by ArgoCD.
+  - `emulator-app.yaml`: Defines the emulator application deployment.
+  - `infra-app.yaml`: Infrastructure-level applications grouping.
 
-### get the initial password for the argocd admin user
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+### Infrastructure Applications
+- `apps/infra-apps/`: Contains infrastructure-specific configurations.
+  - `fluentd-app.yaml`: Logging application setup.
+  - `prom-app.yaml`: Monitoring using Prometheus.
+  - `cert-manager-app.yaml`: Certificate management for TLS.
+  - `elastic-app.yaml`: Elasticsearch setup for data indexing and search.
+  - `ingress-nginx-app.yaml`: NGINX Ingress controller configuration.
+- `values/`: Includes Helm values for customizing deployments.
+  - Example files:
+    - `fluent-values.yaml`: Custom values for Fluentd.
+    - `elasticsearch-values.yaml`: Custom values for Elasticsearch.
 
-kubectl create namespace demo -> for the app deployment
-
-
-##### secrets with sealed secrets ####
-the installation of sealed secrets is threw the charts. its namespace is in a default one called kube-system
-
-to actually get a secret working we need to do the following:
-
-1. create a secret with this imperative command:
-    kubectl create secret generic mongodb-secret --dry-run=client -o yaml --from-literal=USER=dan --from-literal=PASSWORD=dan > secret.yaml
-     
-    note: for now as far as i know after creation we cannot change any of the values. 
-        this means that the name is set, the namespace as well.
-2. create a sealed secret with the following command:
-    
-    kubeseal --controller-name sealed-secrets --controller-namespace kube-system --format yaml --namespace demo < secret.yaml > sealed-mongo-secret.yaml
-
-    note: after this we recive an encrypted secret. none of the values can be modified.
-    note: we must use the flags --controller-name and --controller-namespace to specify the controller that will be used to decrypt the secret.
