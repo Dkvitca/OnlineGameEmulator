@@ -57,7 +57,6 @@ The project is designed to be easily deployed on a Kubernetes cluster, in a aws 
   ``` Fluentd, Prometheus, Elasticsearch, NGINX ingress, cert-manager. ```
 ##
 ![Architecture](./images/architecture.png)
-![Monitoring](./images/monitor.png)
 ##
 
 

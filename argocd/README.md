@@ -29,3 +29,6 @@ This repository contains configurations for managing applications and infrastruc
     - `fluent-values.yaml`: Custom values for Fluentd.
     - `elasticsearch-values.yaml`: Custom values for Elasticsearch.
 
+##
+![ArgoUI](../images/argo.png)
+![Monitor](../images/monitor.png)
