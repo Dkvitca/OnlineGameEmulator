@@ -7,6 +7,19 @@ This project is a containerized application that provides a browser-based emulat
 to check them out.
 The project is designed to be easily deployed on a Kubernetes cluster, in a aws enviorment.
 
+## Browser
+<p align="center">
+  <img src="./images/login.gif" alt="Login GIF" width="35%" />
+  <img src="./images/game-launch.gif" alt="Game Launch GIF" width="35%" />
+</p>
+
+# Mobile
+<p align="center">
+  <img src="./images/mobile-login.gif" alt="Login GIF" width="35%" />
+  <img src="./images/mobile-game.gif" alt="Game Launch GIF" width="35%" />
+</p>
+
+
 ## Table of Contents
 
 ### 1. Online Emulator

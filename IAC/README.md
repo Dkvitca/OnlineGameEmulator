@@ -21,6 +21,11 @@ This repository contains Infrastructure as Code (IAC) configurations, organized 
 
 ### Terraform
 - Modules and configurations to provision cloud infrastructure like VPCs, EKS clusters, and node groups.
+### Usage
+afrer applying the infrestructure, you can use the following commands:
+aws eks --region <defined-region> update-kubeconfig --name <defined-name>
+and deploy manually (for now) argocd:
+helm install argocd argo/argo-cd -n argocd --create-namespace
 
 ## Prerequisites
 To use the configurations in this repository, ensure you have the following tools installed:
