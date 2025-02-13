@@ -1,15 +1,9 @@
-data "tls_certificate" "oidc" {
-  url = var.oidc_issuer
-}
-
-# AWS Identity and Access Management (IAM) OpenID Connect (OIDC) provider
 resource "aws_iam_openid_connect_provider" "eks" {
   url             = var.oidc_issuer
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.oidc.certificates[0].sha1_fingerprint]
 }
 
-# IAM Role for EBS CSI Driver
 resource "aws_iam_role" "ebs_csi_driver" {
   name               = "${var.project_name}-ebs-csi-driver"
   assume_role_policy = data.aws_iam_policy_document.ebs_csi_driver_assume_role.json
@@ -53,4 +47,8 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   service_account_role_arn = aws_iam_role.ebs_csi_driver.arn
 
   tags = merge(var.tags, { Name = "${var.project_name}-ebs-csi-driver" })
+}
+
+data "tls_certificate" "oidc" {
+  url = var.oidc_issuer
 }

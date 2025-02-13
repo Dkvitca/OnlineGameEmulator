@@ -16,7 +16,6 @@ resource "kubernetes_namespace" "namespace" {
   metadata {
     name = each.key
   }
-
 }
 
 resource "kubernetes_secret" "emulator" {

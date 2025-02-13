@@ -1,4 +1,4 @@
-# IAM Role for Node Group
+
 resource "aws_iam_role" "eks_node_group_role" {
   name = "${var.project_name}-eks-ng-role"
 
@@ -16,7 +16,7 @@ resource "aws_iam_role" "eks_node_group_role" {
   })
 }
 
-# Attach policies for the Node Group Role
+
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.eks_node_group_role.name
@@ -37,7 +37,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_driver_policy" {
   role       = aws_iam_role.eks_node_group_role.name
 }
 
-# EKS Node Group
+
 resource "aws_eks_node_group" "node_group" {
   cluster_name    = var.cluster_name
   node_role_arn   = aws_iam_role.eks_node_group_role.arn

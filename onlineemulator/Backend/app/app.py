@@ -107,7 +107,7 @@ def download_game(game_id):
     """API to download the game binary file from S3 to temporary storage."""
     game = games_collection.find_one({"_id": ObjectId(game_id)})
     if game:
-        s3_key = game["s3_url"].split('/', 3)[-1]  # Extract S3 key from URL
+        s3_key = game["s3_url"].split('/', 3)[-1] 
         local_file_path = download_from_s3(s3_key)
         
         return send_from_directory(os.path.dirname(local_file_path), 

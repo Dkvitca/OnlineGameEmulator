@@ -1,3 +1,5 @@
+# the additional tags were required for AWS EKS 
+# to recognize which subnets belong to the cluster.
 locals {
   additional_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
@@ -18,7 +20,6 @@ resource "aws_vpc" "emulator-vpc" {
     { Name = "${var.project_name}-vpc" }
   )
 }
-
 
 resource "aws_subnet" "public" {
   count             = 2

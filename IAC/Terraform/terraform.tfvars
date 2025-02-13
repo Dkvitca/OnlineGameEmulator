@@ -17,6 +17,7 @@ k8s_secrets_config = [
     keys                = ["aws_access_key_id", "aws_secret_access_key", "aws_s3_bucket"]
   }
 ]
+
 cluster_name = "dan-emulator-cluster"
 cidr_block   = "10.0.0.0/16"
 eks_version  = "1.31"

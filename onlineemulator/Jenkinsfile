@@ -50,7 +50,7 @@ pipeline {
             }
             steps {
                 script {
-                    // runEndToEndTests()
+                    runEndToEndTests()
                     sh 'echo amazing end to end'
                 }
             }
@@ -122,6 +122,8 @@ def buildFrontendImage() {
 
 def runEndToEndTests() {
     echo 'Running End-to-End tests with Docker Compose...'
+        // aws Credentilas will be removed in future updates. 
+        // were used in local development, and could be replaced with IAM roles.
     withCredentials([
         string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
         string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY'),
@@ -129,6 +131,14 @@ def runEndToEndTests() {
         string(credentialsId: 'S3_BUCKET_NAME', variable: 'S3_BUCKET_NAME')
     ]) {
         // Update the environment variables dynamically
+        // NOTE: for now the the curl image is being placed with the frontend network,
+        // defined in the docker-compose.yml file. this is not dynamic, and should be changed in the future.
+
+        // tests include:
+        // 1. simple sanity test to check if the frontend is up and running
+        // 2. curl to the frontend service to check if the backend is up and running
+        // 3. curl the registration functionallity. this will result in a test for both the backend and the database.
+        
         sh """
             docker compose down -v
             docker container prune -f

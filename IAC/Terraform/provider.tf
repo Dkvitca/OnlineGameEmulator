@@ -20,10 +20,6 @@ provider "aws" {
   }
 }
 
-
-provider "tls" {}
-
-
 provider "kubernetes" {
   host                   = module.eks_cluster.eks_cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks_cluster.eks_cluster_certificate)
@@ -33,3 +29,5 @@ provider "kubernetes" {
 data "aws_eks_cluster_auth" "emulator-eks-cluster" {
   name = var.cluster_name
 }
+
+provider "tls" {}

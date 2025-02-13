@@ -55,10 +55,14 @@ The project is designed to be easily deployed on a Kubernetes cluster, in a aws 
   - `apps/`: Contains individual application configurations.
   - `apps/infra-apps/`: Manages infrastructure-specific configurations like: 
   ``` Fluentd, Prometheus, Elasticsearch, NGINX ingress, cert-manager. ```
-##
-![Architecture](./images/architecture.png)
-##
 
+## Architecture and Application
+<p align="center">
+  <img src="./images/Architecture.png" alt="Architecture Diagram" width="50%" />
+</p>
+<p align="center">
+  <img src="./images/App.png" alt="Application Overview" width="50%" />
+</p>
 
 ## Purpose of This Repository
 This repository acts as a central hub for:
